@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>🧮 Timecode Calculator for Ćaci</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+      label {
+        display: block;
+      }
+      input {
+        min-width: 100px;
+      }
+      h3 {
+        margin-top: 2rem;
+        margin-bottom: 0.5rem;
+      }
+      .form {
+        margin-bottom: 10px;
+      }
+      #url {
+        width: 300px;
+      }
+      .output {
+        font-size: 1em;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Time Calculator</h3>
+
+    <label
+      >Start Time (HH:MM:SS):
+      <input
+        id="startTime"
+        type="text"
+        placeholder="13:38:37"
+        value="" /></label
+    ><br />
+    <label
+      >End Time (HH:MM:SS):
+      <input id="endTime" placeholder="19:11:18" type="text" value="" /></label
+    ><br />
+    <label
+      >Duration (HH:MM:SS):
+      <input
+        id="durationTime"
+        type="text"
+        placeholder="05:32:23"
+        value="" /></label
+    ><br />
+    <button onclick="calculateEndTime()">Calculate End Time</button>
+    <button onclick="calculateStartTime()">Calculate Start Time</button>
+    <button onclick="calculateDuration()">Calculate Duration</button>
+
+    <p id="result" class="output">&nbsp;</p>
+
+    <h3>TikTok Video Date Extractor</h3>
+    <div class="form">
+      <label for="url">Tiktok video URL:</label>
+      <input type="text" id="url" name="url" />
+      <button onclick="getDate()">Get upload date</button>
+    </div>
+    <div class="output">
+      <span id="label">Uploaded on: </span>
+      <span id="date"></span>
+    </div>
+    <div>
+      <br /><small
+        >Tiktok date extractor orginal script:
+        <a href="https://bellingcat.github.io/tiktok-timestamp/"
+          >Bellingcat</a
+        ></small
+      >
+    </div>
+    <script>
+      function toSeconds(hhmmss) {
+        const [h, m, s] = hhmmss.split(":").map(Number);
+        return h * 3600 + m * 60 + s;
+      }
+
+      function toHHMMSS(seconds) {
+        seconds = ((seconds % 86400) + 86400) % 86400; // Wrap around 24h
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        const pad = (num) => num.toString().padStart(2, "0");
+        return `${pad(h)}:${pad(m)}:${pad(s)}`;
+      }
+
+      function calculateEndTime() {
+        const start = document.getElementById("startTime").value;
+        const duration = document.getElementById("durationTime").value;
+        if (start && duration) {
+          const resultSec = toSeconds(start) + toSeconds(duration);
+          document.getElementById("result").innerText = `End Time: ${toHHMMSS(
+            resultSec
+          )}`;
+        } else {
+          document.getElementById("result").innerText =
+            "Please enter both Start Time and Duration.";
+        }
+      }
+
+      function calculateStartTime() {
+        const end = document.getElementById("endTime").value;
+        const duration = document.getElementById("durationTime").value;
+        if (end && duration) {
+          const resultSec = toSeconds(end) - toSeconds(duration);
+          document.getElementById("result").innerText = `Start Time: ${toHHMMSS(
+            resultSec
+          )}`;
+        } else {
+          document.getElementById("result").innerText =
+            "Please enter both End Time and Duration.";
+        }
+      }
+      function calculateDuration() {
+        const start = document.getElementById("startTime").value;
+        const end = document.getElementById("endTime").value;
+        if (start && end) {
+          const resultSec = toSeconds(end) - toSeconds(start);
+          document.getElementById("result").innerText = `Duration: ${toHHMMSS(
+            resultSec
+          )}`;
+        } else {
+          document.getElementById("result").innerText =
+            "Please enter both Start Time and End Time.";
+        }
+      }
+
+      function getVidId() {
+        const tiktokUrl = document.querySelector("#url").value;
+        // This regex should be safe as "Only letters, numbers, underscores, or periods are allowed" in TikTok usernames.
+        const regex = /(?<=\/video\/)(.*?)(?=$|[^0-9])/;
+        const vidId = regex.exec(tiktokUrl)[0];
+        return vidId;
+      }
+
+      function extractUnixTimestamp(vidId) {
+        // BigInt needed as we need to treat vidId as 64 bit decimal. This reduces browser support.
+        const asBinary = BigInt(vidId).toString(2);
+        const first31Chars = asBinary.slice(0, 31);
+        const timestamp = parseInt(first31Chars, 2);
+        return timestamp;
+      }
+
+      function unixTimestampToHumanDate(timestamp) {
+        const milliseconds = timestamp * 1000;
+        const dateObject = new Date(milliseconds);
+        const humanDateFormat = dateObject.toUTCString() + " (UTC)";
+        return humanDateFormat;
+      }
+
+      function getDate() {
+        const vidId = getVidId();
+        const unixTimestamp = extractUnixTimestamp(vidId);
+        const humanDateFormat = unixTimestampToHumanDate(unixTimestamp);
+        document.querySelector("#date").textContent = humanDateFormat;
+      }
+    </script>
+  </body>
+</html>
